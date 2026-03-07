@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { jobs } from '../lib/api';
-import { Loader2, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ChevronDown } from 'lucide-react';
 
 function formatDuration(seconds) {
   if (seconds == null) return '—';
@@ -52,6 +52,8 @@ export default function ExecutionHistory({ jobId }) {
     return <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-accent" /></div>;
   }
 
+  const hasDetail = (exec) => exec.log_output || exec.error_summary;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -79,8 +81,10 @@ export default function ExecutionHistory({ jobId }) {
             return (
               <div key={exec.id}>
                 <div
-                  onClick={() => setExpanded(isExpanded ? null : exec.id)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-1 border border-border hover:border-border-hover cursor-pointer transition-all"
+                  onClick={() => hasDetail(exec) && setExpanded(isExpanded ? null : exec.id)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-1 border border-border transition-all ${
+                    hasDetail(exec) ? 'hover:border-border-hover cursor-pointer' : ''
+                  }`}
                 >
                   {/* Status icon */}
                   <div className={`p-1.5 rounded-lg ${cfg.bg}`}>
@@ -98,22 +102,48 @@ export default function ExecutionHistory({ jobId }) {
                     <p className="text-xs text-txt-dim mt-0.5 font-mono">{formatTime(exec.started_at)}</p>
                   </div>
 
-                  {/* Duration */}
-                  <span className="text-xs font-mono text-txt-muted flex-shrink-0">
-                    {formatDuration(exec.duration_seconds)}
-                  </span>
+                  {/* Duration + expand indicator */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs font-mono text-txt-muted">
+                      {formatDuration(exec.duration_seconds)}
+                    </span>
+                    {hasDetail(exec) && (
+                      <ChevronDown
+                        size={14}
+                        className={`text-txt-dim transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                      />
+                    )}
+                  </div>
                 </div>
 
-                {/* Expanded error detail */}
-                {isExpanded && exec.error_summary && (
-                  <div className="ml-10 mt-1 mb-2 px-4 py-3 rounded-lg bg-surface-0 border border-border">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <AlertTriangle size={12} className="text-danger" />
-                      <span className="text-xs font-medium text-danger">Error output</span>
-                    </div>
-                    <pre className="text-xs font-mono text-txt-muted whitespace-pre-wrap break-all leading-relaxed">
-                      {exec.error_summary}
-                    </pre>
+                {/* Expanded detail panel */}
+                {isExpanded && (
+                  <div className="ml-10 mt-1 mb-2 space-y-2">
+                    {/* Log output */}
+                    {exec.log_output && (
+                      <div className="px-4 py-3 rounded-lg bg-surface-0 border border-border">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <FileText size={12} className="text-accent" />
+                          <span className="text-xs font-medium text-accent">Output log</span>
+                        </div>
+                        <pre className="text-xs font-mono text-txt-muted whitespace-pre-wrap break-all leading-relaxed max-h-80 overflow-y-auto">
+                          {exec.log_output}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* Error summary (shown separately if present) */}
+                    {exec.error_summary && (
+                      <div className="px-4 py-3 rounded-lg bg-danger/5 border border-danger/15">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <AlertTriangle size={12} className="text-danger" />
+                          <span className="text-xs font-medium text-danger">Error summary</span>
+                        </div>
+                        <pre className="text-xs font-mono text-danger/80 whitespace-pre-wrap break-all leading-relaxed">
+                          {exec.error_summary}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
