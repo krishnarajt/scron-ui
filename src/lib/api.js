@@ -163,3 +163,18 @@ export const jobs = {
   updateRequirements: (content) =>
     api('/config/requirements', { method: 'PUT', body: { content } }),
 };
+
+export const analytics = {
+  // Global dashboard analytics
+  getOverview: () => api('/analytics/overview'),
+  getTimeline: (days = 14) => api(`/analytics/timeline?days=${days}`),
+  getHeatmap: (days = 7) => api(`/analytics/heatmap?days=${days}`),
+  getJobBreakdown: () => api('/analytics/jobs/breakdown'),
+
+  // Per-job analytics
+  getJobStats: (jobId) => api(`/analytics/jobs/${jobId}/stats`),
+  getJobDuration: (jobId, limit = 50) =>
+    api(`/analytics/jobs/${jobId}/duration?limit=${limit}`),
+  getJobTimeline: (jobId, days = 14) =>
+    api(`/analytics/jobs/${jobId}/timeline?days=${days}`),
+};

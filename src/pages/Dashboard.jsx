@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobs } from '../lib/api';
 import JobForm from '../components/JobForm';
+import DashboardCharts from '../components/DashboardCharts';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   Plus, Clock, ChevronRight,
   RefreshCw, Loader2, CheckCircle2, Zap,
-  Activity, Pause, Play, BarChart3,
+  BarChart3, ChevronDown, ChevronUp,
 } from 'lucide-react';
 
 // Lazy-load cronstrue for human-readable cron descriptions
@@ -64,6 +65,7 @@ export default function Dashboard() {
   // Compute stats
   const activeCount = jobList.filter(j => j.is_active).length;
   const pausedCount = jobList.filter(j => !j.is_active).length;
+  const [showCharts, setShowCharts] = useState(true);
 
   if (loading) {
     return (
@@ -109,44 +111,30 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats cards */}
+      {/* ── Analytics Section ── */}
       {jobList.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {[
-            { label: 'Total Jobs', value: total, icon: BarChart3, gradient: 'var(--gradient-1)' },
-            { label: 'Active', value: activeCount, icon: Activity, gradient: 'var(--gradient-2)' },
-            { label: 'Paused', value: pausedCount, icon: Pause, gradient: 'var(--gradient-3)' },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="stat-glow rounded-2xl p-5 relative overflow-hidden"
-              style={{
-                background: 'var(--surface-1)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider mb-1"
-                     style={{ color: 'var(--txt-dim)' }}>
-                    {stat.label}
-                  </p>
-                  <p className="text-3xl font-bold" style={{ color: stat.gradient }}>
-                    {stat.value}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl" style={{ background: `${stat.gradient}15` }}>
-                  <stat.icon size={20} style={{ color: stat.gradient }} />
-                </div>
-              </div>
-              {/* Subtle gradient shimmer at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-[1px]"
-                   style={{ background: `linear-gradient(90deg, transparent, ${stat.gradient}40, transparent)` }} />
-            </motion.div>
-          ))}
+        <div className="mb-8">
+          <button
+            onClick={() => setShowCharts(!showCharts)}
+            className="flex items-center gap-2 mb-4 text-sm font-semibold transition-colors duration-200"
+            style={{ color: 'var(--txt-muted)' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--txt)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--txt-muted)'}
+          >
+            <BarChart3 size={15} style={{ color: 'var(--accent)' }} />
+            <span>Analytics</span>
+            {showCharts ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {showCharts && <DashboardCharts />}
+        </div>
+      )}
+
+      {/* ── Jobs Section Header ── */}
+      {jobList.length > 0 && (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--txt-muted)' }}>
+            {total} job{total !== 1 ? 's' : ''} configured
+          </h2>
         </div>
       )}
 

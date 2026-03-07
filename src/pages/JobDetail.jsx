@@ -5,17 +5,19 @@ import JobForm from '../components/JobForm';
 import EnvVarsEditor from '../components/EnvVarsEditor';
 import ExecutionHistory from '../components/ExecutionHistory';
 import CodeEditor from '../components/CodeEditor';
+import JobAnalytics from '../components/JobAnalytics';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft, Loader2, Pencil, Trash2, Zap, CheckCircle2,
-  Code2, KeyRound, History, Play, Pause, AlertTriangle,
+  Code2, KeyRound, History, Play, Pause, AlertTriangle, BarChart3,
 } from 'lucide-react';
 
 const TABS = [
   { id: 'script', label: 'Script', icon: Code2 },
   { id: 'env', label: 'Variables', icon: KeyRound },
   { id: 'history', label: 'History', icon: History },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 export default function JobDetail() {
@@ -271,6 +273,7 @@ export default function JobDetail() {
 
         {tab === 'env' && <EnvVarsEditor jobId={id} />}
         {tab === 'history' && <ExecutionHistory jobId={id} />}
+        {tab === 'analytics' && <JobAnalytics jobId={id} />}
       </motion.div>
 
       {/* Edit modal */}

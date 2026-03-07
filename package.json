@@ -18,7 +18,8 @@
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/lang-javascript": "^6.2.2",
     "react-hot-toast": "^2.4.1",
-    "framer-motion": "^11.11.0"
+    "framer-motion": "^11.11.0",
+    "recharts": "^2.13.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
