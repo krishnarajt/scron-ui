@@ -158,8 +158,8 @@ export const jobs = {
   getExecutions: (jobId, limit = 50, offset = 0) =>
     api(`/jobs/${jobId}/executions?limit=${limit}&offset=${offset}`),
 
-  // Requirements
-  getRequirements: () => api('/jobs/requirements'),
+  // Requirements (under /config, not /jobs)
+  getRequirements: () => api('/config/requirements'),
   updateRequirements: (content) =>
-    api('/jobs/requirements', { method: 'PUT', body: { content } }),
+    api('/config/requirements', { method: 'PUT', body: { content } }),
 };
