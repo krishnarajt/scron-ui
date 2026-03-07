@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobs } from '../lib/api';
 import JobForm from '../components/JobForm';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import {
-  Plus, Play, Pause, Clock, ChevronRight,
-  RefreshCw, Loader2, AlertCircle, CheckCircle2, Zap,
+  Plus, Clock, ChevronRight,
+  RefreshCw, Loader2, CheckCircle2, Zap,
+  Activity, Pause, Play, BarChart3,
 } from 'lucide-react';
 
 // Lazy-load cronstrue for human-readable cron descriptions
@@ -44,7 +47,9 @@ export default function Dashboard() {
     setTriggeringId(jobId);
     try {
       await jobs.trigger(jobId);
+      toast.success('Job triggered');
     } catch (err) {
+      toast.error('Failed to trigger job');
       console.error('Failed to trigger job', err);
     } finally {
       setTimeout(() => setTriggeringId(null), 1500);
@@ -56,35 +61,47 @@ export default function Dashboard() {
     fetchJobs();
   };
 
+  // Compute stats
+  const activeCount = jobList.filter(j => j.is_active).length;
+  const pausedCount = jobList.filter(j => !j.is_active).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-accent" />
+        <div className="text-center">
+          <Loader2 size={28} className="animate-spin mx-auto mb-3" style={{ color: 'var(--accent)' }} />
+          <p className="text-sm" style={{ color: 'var(--txt-dim)' }}>Loading jobs...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in">
+    <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Jobs</h1>
-          <p className="text-sm text-txt-muted mt-1">
-            {total} job{total !== 1 ? 's' : ''} configured
+          <h1 className="text-2xl font-bold tracking-tight">
+            <span className="gradient-text">Dashboard</span>
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--txt-muted)' }}>
+            Manage your scheduled jobs
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={fetchJobs}
-            className="p-2 rounded-lg text-txt-muted hover:text-txt hover:bg-surface-3 transition-all"
+            className="p-2.5 rounded-xl transition-all duration-200"
+            style={{ color: 'var(--txt-muted)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.color = 'var(--txt)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
             title="Refresh"
           >
             <RefreshCw size={16} />
           </button>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-surface-0 text-sm font-semibold hover:bg-accent-bright transition-all duration-200"
+            className="btn-primary flex items-center gap-2"
           >
             <Plus size={16} />
             <span>New Job</span>
@@ -92,64 +109,170 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Stats cards */}
+      {jobList.length > 0 && (
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          {[
+            { label: 'Total Jobs', value: total, icon: BarChart3, gradient: 'var(--gradient-1)' },
+            { label: 'Active', value: activeCount, icon: Activity, gradient: 'var(--gradient-2)' },
+            { label: 'Paused', value: pausedCount, icon: Pause, gradient: 'var(--gradient-3)' },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="stat-glow rounded-2xl p-5 relative overflow-hidden"
+              style={{
+                background: 'var(--surface-1)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider mb-1"
+                     style={{ color: 'var(--txt-dim)' }}>
+                    {stat.label}
+                  </p>
+                  <p className="text-3xl font-bold" style={{ color: stat.gradient }}>
+                    {stat.value}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl" style={{ background: `${stat.gradient}15` }}>
+                  <stat.icon size={20} style={{ color: stat.gradient }} />
+                </div>
+              </div>
+              {/* Subtle gradient shimmer at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-[1px]"
+                   style={{ background: `linear-gradient(90deg, transparent, ${stat.gradient}40, transparent)` }} />
+            </motion.div>
+          ))}
+        </div>
+      )}
+
       {/* Empty state */}
       {jobList.length === 0 && (
-        <div className="text-center py-20 border border-dashed border-border rounded-2xl">
-          <Clock size={40} className="mx-auto text-txt-dim mb-4" />
-          <h3 className="text-lg font-medium mb-2">No jobs yet</h3>
-          <p className="text-sm text-txt-muted mb-6">Create your first scheduled job to get started.</p>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-20 border border-dashed rounded-2xl"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center animate-float"
+               style={{ background: 'var(--accent-glow)' }}>
+            <Clock size={28} style={{ color: 'var(--accent)' }} />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No jobs yet</h3>
+          <p className="text-sm mb-6" style={{ color: 'var(--txt-muted)' }}>
+            Create your first scheduled job to get started.
+          </p>
           <button
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-surface-0 text-sm font-semibold hover:bg-accent-bright transition-all"
+            className="btn-primary inline-flex items-center gap-2"
           >
             <Plus size={16} />
             <span>Create Job</span>
           </button>
-        </div>
+        </motion.div>
       )}
 
       {/* Job list */}
-      <div className="stagger space-y-2">
-        {jobList.map((job) => (
-          <div
+      <div className="space-y-3">
+        {jobList.map((job, i) => (
+          <motion.div
             key={job.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => navigate(`/jobs/${job.id}`)}
-            className="group flex items-center gap-4 px-4 py-3.5 rounded-xl bg-surface-1 border border-border hover:border-border-hover cursor-pointer transition-all duration-200"
+            className="group flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer transition-all duration-300"
+            style={{
+              background: 'var(--surface-1)',
+              border: '1px solid var(--border)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-hover)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2), 0 0 20px var(--accent-glow)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
             {/* Status dot */}
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${job.is_active ? 'bg-accent animate-pulse-glow' : 'bg-txt-dim'}`} />
+            <div className="relative flex-shrink-0">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{
+                  background: job.is_active ? 'var(--accent)' : 'var(--txt-dim)',
+                  boxShadow: job.is_active ? '0 0 8px var(--accent-glow)' : 'none',
+                }}
+              />
+              {job.is_active && (
+                <div
+                  className="absolute inset-0 w-3 h-3 rounded-full animate-ping"
+                  style={{ background: 'var(--accent)', opacity: 0.3 }}
+                />
+              )}
+            </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium text-sm truncate">{job.name}</h3>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium uppercase bg-surface-3 text-txt-muted flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <h3 className="font-semibold text-sm truncate">{job.name}</h3>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase flex-shrink-0"
+                      style={{ background: 'var(--surface-3)', color: 'var(--txt-muted)' }}>
                   {job.script_type}
                 </span>
+                {!job.is_active && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase flex-shrink-0"
+                        style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
+                    paused
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs font-mono text-txt-muted">{job.cron_expression}</span>
-                <span className="text-xs text-txt-dim hidden sm:inline">— {cronToHuman(job.cron_expression)}</span>
+                <span className="text-xs font-mono" style={{ color: 'var(--txt-muted)' }}>
+                  {job.cron_expression}
+                </span>
+                <span className="text-xs hidden sm:inline" style={{ color: 'var(--txt-dim)' }}>
+                  — {cronToHuman(job.cron_expression)}
+                </span>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 onClick={(e) => handleTrigger(e, job.id)}
                 disabled={triggeringId === job.id}
-                className="p-2 rounded-lg text-txt-muted hover:text-accent hover:bg-accent/10 transition-all"
+                className="p-2.5 rounded-xl transition-all duration-200"
+                style={{ color: 'var(--txt-muted)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--accent)';
+                  e.currentTarget.style.background = 'var(--accent-glow)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--txt-muted)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
                 title="Run now"
               >
                 {triggeringId === job.id ? (
-                  <CheckCircle2 size={15} className="text-accent" />
+                  <CheckCircle2 size={16} style={{ color: 'var(--accent)' }} />
                 ) : (
-                  <Zap size={15} />
+                  <Zap size={16} />
                 )}
               </button>
-              <ChevronRight size={16} className="text-txt-dim group-hover:text-txt-muted transition-colors" />
+              <ChevronRight
+                size={16}
+                className="transition-all duration-200"
+                style={{ color: 'var(--txt-dim)' }}
+              />
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 

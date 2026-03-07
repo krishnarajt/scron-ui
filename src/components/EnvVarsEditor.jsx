@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { jobs } from '../lib/api';
-import { Plus, Trash2, Save, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function EnvVarsEditor({ jobId }) {
   const [envVars, setEnvVars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
   const [visibleKeys, setVisibleKeys] = useState(new Set());
 
   const fetchEnv = useCallback(async () => {
@@ -47,7 +48,6 @@ export default function EnvVarsEditor({ jobId }) {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    setSuccess(false);
     try {
       // Filter out empty keys
       const valid = envVars.filter((ev) => ev.key.trim());
@@ -55,35 +55,48 @@ export default function EnvVarsEditor({ jobId }) {
         jobId,
         valid.map((ev) => ({ var_key: ev.key.trim(), var_value: ev.value }))
       );
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
+      toast.success('Environment variables saved');
       fetchEnv();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-accent" /></div>;
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
+      </div>
+    );
   }
 
   return (
     <div>
       {error && (
-        <div className="mb-4 px-3 py-2.5 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>
-      )}
-      {success && (
-        <div className="mb-4 px-3 py-2.5 rounded-lg bg-accent/10 border border-accent/20 text-sm text-accent">Environment variables saved</div>
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-3 rounded-xl text-sm"
+          style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444' }}
+        >
+          {error}
+        </motion.div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-txt-muted">{envVars.length} variable{envVars.length !== 1 ? 's' : ''}</p>
+      <div className="flex items-center justify-between mb-5">
+        <p className="text-sm" style={{ color: 'var(--txt-muted)' }}>
+          {envVars.length} variable{envVars.length !== 1 ? 's' : ''}
+        </p>
         <button
           onClick={addRow}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-accent hover:bg-accent/10 transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300"
+          style={{ color: 'var(--accent)', background: 'var(--accent-glow)' }}
+          onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 15px var(--accent-glow)'}
+          onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
         >
           <Plus size={14} />
           Add variable
@@ -92,60 +105,82 @@ export default function EnvVarsEditor({ jobId }) {
 
       {/* Rows */}
       {envVars.length === 0 ? (
-        <div className="text-center py-10 text-sm text-txt-dim border border-dashed border-border rounded-xl">
-          No environment variables set. Click "Add variable" to create one.
+        <div className="text-center py-14 text-sm border border-dashed rounded-2xl"
+             style={{ color: 'var(--txt-dim)', borderColor: 'var(--border)' }}>
+          <KeyRound size={32} className="mx-auto mb-3 opacity-30" />
+          <p>No environment variables set.</p>
+          <p className="text-xs mt-1 opacity-60">Click "Add variable" to create one.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {envVars.map((ev, idx) => (
-            <div key={idx} className="flex items-center gap-2 group">
-              {/* Key */}
-              <input
-                type="text"
-                value={ev.key}
-                onChange={(e) => updateRow(idx, 'key', e.target.value)}
-                placeholder="VARIABLE_NAME"
-                spellCheck={false}
-                className="w-48 flex-shrink-0 px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm font-mono text-txt placeholder-txt-dim focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all outline-none"
-              />
-              <span className="text-txt-dim">=</span>
-              {/* Value */}
-              <div className="relative flex-1">
-                <input
-                  type={visibleKeys.has(idx) ? 'text' : 'password'}
-                  value={ev.value}
-                  onChange={(e) => updateRow(idx, 'value', e.target.value)}
-                  placeholder="value"
-                  spellCheck={false}
-                  className="w-full px-3 py-2 pr-9 rounded-lg bg-surface-2 border border-border text-sm font-mono text-txt placeholder-txt-dim focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => toggleVisible(idx)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-txt-dim hover:text-txt-muted transition-colors"
-                >
-                  {visibleKeys.has(idx) ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              {/* Delete */}
-              <button
-                onClick={() => removeRow(idx)}
-                className="p-2 rounded-lg text-txt-dim hover:text-danger hover:bg-danger/10 transition-all opacity-0 group-hover:opacity-100"
+          <AnimatePresence>
+            {envVars.map((ev, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="flex items-center gap-2 group"
               >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
+                {/* Key */}
+                <input
+                  type="text"
+                  value={ev.key}
+                  onChange={(e) => updateRow(idx, 'key', e.target.value)}
+                  placeholder="VARIABLE_NAME"
+                  spellCheck={false}
+                  className="w-48 flex-shrink-0 input-field font-mono !py-2.5 !text-xs"
+                />
+                <span className="font-mono text-lg" style={{ color: 'var(--txt-dim)' }}>=</span>
+                {/* Value */}
+                <div className="relative flex-1">
+                  <input
+                    type={visibleKeys.has(idx) ? 'text' : 'password'}
+                    value={ev.value}
+                    onChange={(e) => updateRow(idx, 'value', e.target.value)}
+                    placeholder="value"
+                    spellCheck={false}
+                    className="w-full input-field font-mono !py-2.5 !text-xs !pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleVisible(idx)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-200"
+                    style={{ color: 'var(--txt-dim)' }}
+                  >
+                    {visibleKeys.has(idx) ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+                {/* Delete */}
+                <button
+                  onClick={() => removeRow(idx)}
+                  className="p-2.5 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+                  style={{ color: 'var(--txt-dim)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#ef4444';
+                    e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--txt-dim)';
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
       {/* Save */}
       {envVars.length > 0 && (
-        <div className="flex justify-end mt-5">
+        <div className="flex justify-end mt-6">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-surface-0 text-sm font-semibold hover:bg-accent-bright disabled:opacity-50 transition-all"
+            className="btn-primary flex items-center gap-2 disabled:opacity-50"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             <span>Save All</span>

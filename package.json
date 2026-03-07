@@ -1,7 +1,7 @@
 {
   "name": "scron-ui",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,12 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
     "lucide-react": "^0.460.0",
-    "cronstrue": "^2.50.0"
+    "cronstrue": "^2.50.0",
+    "@uiw/react-codemirror": "^4.23.0",
+    "@codemirror/lang-python": "^6.1.6",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "react-hot-toast": "^2.4.1",
+    "framer-motion": "^11.11.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
