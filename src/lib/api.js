@@ -1,0 +1,165 @@
+/**
+ * API client for scron backend.
+ *
+ * Handles:
+ * - Bearer token injection on every request
+ * - Automatic token refresh on 401
+ * - Retry after refresh (once)
+ * - Logout on double 401 (refresh also failed)
+ */
+
+const API_BASE = '/api';
+
+// ── Token storage ──────────────────────────────────────────────
+// Stored in memory + localStorage so they survive page reloads
+// but the in-memory copy is the primary source of truth.
+
+let _accessToken = localStorage.getItem('scron_access_token') || null;
+let _refreshToken = localStorage.getItem('scron_refresh_token') || null;
+
+export function getTokens() {
+  return { accessToken: _accessToken, refreshToken: _refreshToken };
+}
+
+export function setTokens(accessToken, refreshToken) {
+  _accessToken = accessToken;
+  _refreshToken = refreshToken;
+  if (accessToken) localStorage.setItem('scron_access_token', accessToken);
+  else localStorage.removeItem('scron_access_token');
+  if (refreshToken) localStorage.setItem('scron_refresh_token', refreshToken);
+  else localStorage.removeItem('scron_refresh_token');
+}
+
+export function clearTokens() {
+  _accessToken = null;
+  _refreshToken = null;
+  localStorage.removeItem('scron_access_token');
+  localStorage.removeItem('scron_refresh_token');
+}
+
+// ── Refresh lock ───────────────────────────────────────────────
+// Prevents multiple concurrent refresh requests.
+let _refreshPromise = null;
+
+async function refreshAccessToken() {
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    if (!_refreshToken) throw new Error('No refresh token');
+
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: _refreshToken }),
+    });
+
+    if (!res.ok) {
+      clearTokens();
+      throw new Error('Refresh failed');
+    }
+
+    const data = await res.json();
+    setTokens(data.accessToken, data.refreshToken);
+    return data.accessToken;
+  })();
+
+  try {
+    return await _refreshPromise;
+  } finally {
+    _refreshPromise = null;
+  }
+}
+
+// ── Core request function ──────────────────────────────────────
+
+/**
+ * Make an authenticated API request.
+ * Automatically retries once with a refreshed token on 401.
+ */
+export async function api(path, options = {}) {
+  const { body, method = 'GET', noAuth = false, ...rest } = options;
+
+  const headers = { 'Content-Type': 'application/json', ...rest.headers };
+  if (!noAuth && _accessToken) {
+    headers['Authorization'] = `Bearer ${_accessToken}`;
+  }
+
+  const fetchOptions = {
+    method,
+    headers,
+    ...rest,
+  };
+  if (body !== undefined) {
+    fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+
+  let res = await fetch(`${API_BASE}${path}`, fetchOptions);
+
+  // If 401 and we have a refresh token, try to refresh and retry once
+  if (res.status === 401 && _refreshToken && !noAuth) {
+    try {
+      const newToken = await refreshAccessToken();
+      headers['Authorization'] = `Bearer ${newToken}`;
+      res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
+    } catch {
+      // Refresh failed — force logout
+      clearTokens();
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+  }
+
+  // Handle 204 No Content
+  if (res.status === 204) return null;
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const err = new Error(errBody.detail || `Request failed (${res.status})`);
+    err.status = res.status;
+    err.body = errBody;
+    throw err;
+  }
+
+  return res.json();
+}
+
+// ── Convenience wrappers ───────────────────────────────────────
+
+export const auth = {
+  login: (username, password) =>
+    api('/auth/login', { method: 'POST', body: { username, password }, noAuth: true }),
+  signup: (username, password) =>
+    api('/auth/signup', { method: 'POST', body: { username, password }, noAuth: true }),
+  logout: () => {
+    const rt = _refreshToken;
+    if (rt) api('/auth/logout', { method: 'POST', body: { refreshToken: rt } }).catch(() => {});
+    clearTokens();
+  },
+};
+
+export const jobs = {
+  list: () => api('/jobs'),
+  get: (id) => api(`/jobs/${id}`),
+  create: (data) => api('/jobs', { method: 'POST', body: data }),
+  update: (id, data) => api(`/jobs/${id}`, { method: 'PATCH', body: data }),
+  delete: (id) => api(`/jobs/${id}`, { method: 'DELETE' }),
+  trigger: (id) => api(`/jobs/${id}/trigger`, { method: 'POST' }),
+
+  // Environment variables
+  getEnv: (jobId) => api(`/jobs/${jobId}/env`),
+  setEnv: (jobId, varKey, varValue) =>
+    api(`/jobs/${jobId}/env`, { method: 'POST', body: { var_key: varKey, var_value: varValue } }),
+  setEnvBulk: (jobId, envVars) =>
+    api(`/jobs/${jobId}/env`, { method: 'PUT', body: { env_vars: envVars } }),
+  deleteEnv: (jobId, varKey) =>
+    api(`/jobs/${jobId}/env/${encodeURIComponent(varKey)}`, { method: 'DELETE' }),
+
+  // Executions
+  getExecutions: (jobId, limit = 50, offset = 0) =>
+    api(`/jobs/${jobId}/executions?limit=${limit}&offset=${offset}`),
+
+  // Requirements
+  getRequirements: () => api('/jobs/requirements'),
+  updateRequirements: (content) =>
+    api('/jobs/requirements', { method: 'PUT', body: { content } }),
+};
