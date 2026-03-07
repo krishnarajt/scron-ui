@@ -1,13 +1,15 @@
-import { useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import { javascript } from '@codemirror/lang-javascript';
 import { EditorView } from '@codemirror/view';
+import { Sun, Moon } from 'lucide-react';
 
 /**
  * CodeEditor — A beautifully themed code editor built on CodeMirror 6.
  * Supports Python and Bash with full syntax highlighting,
- * line numbers, active line gutter, and bracket matching.
+ * line numbers, active line gutter, bracket matching,
+ * and a light/dark mode toggle.
  *
  * Props:
  *   value       — the current code string
@@ -27,9 +29,53 @@ export default function CodeEditor({
   minHeight = 200,
   maxHeight = 500,
 }) {
+  const [editorLight, setEditorLight] = useState(false);
+
   const handleChange = useCallback((val) => {
     if (onChange) onChange(val);
   }, [onChange]);
+
+  // Dark theme colors
+  const darkColors = {
+    bg: 'var(--surface-0)',
+    gutterBg: 'var(--surface-0)',
+    gutterBorder: 'var(--border)',
+    gutterText: 'var(--txt-dim)',
+    activeLineBg: 'rgba(from var(--accent) r g b / 0.04)',
+    activeGutterBg: 'rgba(from var(--accent) r g b / 0.1)',
+    activeGutterColor: 'var(--accent)',
+    text: 'var(--txt)',
+    caret: 'var(--accent)',
+    selectionBg: 'rgba(from var(--accent) r g b / 0.15)',
+    placeholderColor: 'var(--txt-dim)',
+    matchBracketBg: 'rgba(from var(--accent) r g b / 0.2)',
+    matchBracketColor: 'var(--accent)',
+    border: 'var(--border)',
+    focusBorder: 'var(--accent)',
+    focusGlow: 'var(--accent-glow)',
+  };
+
+  // Light theme colors
+  const lightColors = {
+    bg: '#fafbfc',
+    gutterBg: '#f3f4f6',
+    gutterBorder: '#e5e7eb',
+    gutterText: '#9ca3af',
+    activeLineBg: 'rgba(59, 130, 246, 0.04)',
+    activeGutterBg: 'rgba(59, 130, 246, 0.08)',
+    activeGutterColor: '#3b82f6',
+    text: '#1f2937',
+    caret: '#3b82f6',
+    selectionBg: 'rgba(59, 130, 246, 0.15)',
+    placeholderColor: '#9ca3af',
+    matchBracketBg: 'rgba(59, 130, 246, 0.15)',
+    matchBracketColor: '#3b82f6',
+    border: '#e5e7eb',
+    focusBorder: '#3b82f6',
+    focusGlow: 'rgba(59, 130, 246, 0.15)',
+  };
+
+  const c = editorLight ? lightColors : darkColors;
 
   // Language extension
   const extensions = useMemo(() => {
@@ -37,21 +83,21 @@ export default function CodeEditor({
       EditorView.lineWrapping,
       EditorView.theme({
         '&': {
-          backgroundColor: 'var(--surface-0)',
+          backgroundColor: c.bg,
           borderRadius: '12px',
-          border: '1px solid var(--border)',
+          border: `1px solid ${c.border}`,
           minHeight: `${minHeight}px`,
           maxHeight: `${maxHeight}px`,
         },
         '&.cm-focused': {
           outline: 'none',
-          borderColor: 'var(--accent)',
-          boxShadow: '0 0 0 3px var(--accent-glow), 0 0 20px var(--accent-glow)',
+          borderColor: c.focusBorder,
+          boxShadow: `0 0 0 3px ${c.focusGlow}, 0 0 20px ${c.focusGlow}`,
         },
         '.cm-gutters': {
-          backgroundColor: 'var(--surface-0)',
-          borderRight: '1px solid var(--border)',
-          color: 'var(--txt-dim)',
+          backgroundColor: c.gutterBg,
+          borderRight: `1px solid ${c.gutterBorder}`,
+          color: c.gutterText,
           paddingLeft: '4px',
           paddingRight: '8px',
           minWidth: '40px',
@@ -63,34 +109,35 @@ export default function CodeEditor({
           minWidth: '20px',
         },
         '.cm-activeLineGutter': {
-          backgroundColor: 'rgba(from var(--accent) r g b / 0.1)',
-          color: 'var(--accent)',
+          backgroundColor: c.activeGutterBg,
+          color: c.activeGutterColor,
         },
         '.cm-activeLine': {
-          backgroundColor: 'rgba(from var(--accent) r g b / 0.04)',
+          backgroundColor: c.activeLineBg,
         },
         '.cm-content': {
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
           fontSize: '13px',
           lineHeight: '1.7',
           padding: '8px 0',
-          caretColor: 'var(--accent)',
+          caretColor: c.caret,
+          color: c.text,
         },
         '.cm-cursor': {
-          borderLeftColor: 'var(--accent)',
+          borderLeftColor: c.caret,
           borderLeftWidth: '2px',
         },
         '.cm-selectionBackground': {
-          backgroundColor: 'rgba(from var(--accent) r g b / 0.15) !important',
+          backgroundColor: `${c.selectionBg} !important`,
         },
         '.cm-placeholder': {
-          color: 'var(--txt-dim)',
+          color: c.placeholderColor,
           fontStyle: 'italic',
         },
         '.cm-matchingBracket': {
-          backgroundColor: 'rgba(from var(--accent) r g b / 0.2)',
-          color: 'var(--accent) !important',
-          borderBottom: '2px solid var(--accent)',
+          backgroundColor: c.matchBracketBg,
+          color: `${c.matchBracketColor} !important`,
+          borderBottom: `2px solid ${c.matchBracketColor}`,
         },
         '.cm-scroller': {
           overflow: 'auto',
@@ -106,18 +153,41 @@ export default function CodeEditor({
     }
 
     return exts;
-  }, [language, minHeight, maxHeight]);
+  }, [language, minHeight, maxHeight, editorLight]);
 
   return (
     <div className="code-editor-wrapper relative group">
-      {/* Language badge */}
-      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider transition-opacity duration-200"
-           style={{
-             background: 'var(--surface-3)',
-             color: 'var(--txt-dim)',
-             opacity: 0.8,
-           }}>
-        {language}
+      {/* Top bar with language badge and light/dark toggle */}
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+        {/* Light/dark toggle */}
+        <button
+          type="button"
+          onClick={() => setEditorLight(!editorLight)}
+          className="p-1.5 rounded-md transition-all duration-200"
+          style={{
+            background: editorLight ? '#e5e7eb' : 'var(--surface-3)',
+            color: editorLight ? '#6b7280' : 'var(--txt-dim)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = editorLight ? '#1f2937' : 'var(--txt-muted)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = editorLight ? '#6b7280' : 'var(--txt-dim)';
+          }}
+          title={editorLight ? 'Switch to dark editor' : 'Switch to light editor'}
+        >
+          {editorLight ? <Moon size={13} /> : <Sun size={13} />}
+        </button>
+
+        {/* Language badge */}
+        <div className="px-2 py-1 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider"
+             style={{
+               background: editorLight ? '#e5e7eb' : 'var(--surface-3)',
+               color: editorLight ? '#6b7280' : 'var(--txt-dim)',
+               opacity: 0.9,
+             }}>
+          {language}
+        </div>
       </div>
 
       <CodeMirror
@@ -137,7 +207,7 @@ export default function CodeEditor({
           indentOnInput: true,
           tabSize: 4,
         }}
-        theme="dark"
+        theme={editorLight ? 'light' : 'dark'}
       />
     </div>
   );

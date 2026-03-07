@@ -49,7 +49,6 @@ export default function EnvVarsEditor({ jobId }) {
     setSaving(true);
     setError(null);
     try {
-      // Filter out empty keys
       const valid = envVars.filter((ev) => ev.key.trim());
       await jobs.setEnvBulk(
         jobId,
@@ -67,7 +66,7 @@ export default function EnvVarsEditor({ jobId }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex justify-center py-8">
         <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
       </div>
     );
@@ -79,7 +78,7 @@ export default function EnvVarsEditor({ jobId }) {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 px-4 py-3 rounded-xl text-sm"
+          className="mb-4 px-3 py-2.5 rounded-lg text-sm"
           style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444' }}
         >
           {error}
@@ -87,16 +86,16 @@ export default function EnvVarsEditor({ jobId }) {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4">
         <p className="text-sm" style={{ color: 'var(--txt-muted)' }}>
           {envVars.length} variable{envVars.length !== 1 ? 's' : ''}
         </p>
         <button
           onClick={addRow}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300"
-          style={{ color: 'var(--accent)', background: 'var(--accent-glow)' }}
-          onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 15px var(--accent-glow)'}
-          onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
+          style={{ color: 'var(--accent)' }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-glow)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           <Plus size={14} />
           Add variable
@@ -105,9 +104,9 @@ export default function EnvVarsEditor({ jobId }) {
 
       {/* Rows */}
       {envVars.length === 0 ? (
-        <div className="text-center py-14 text-sm border border-dashed rounded-2xl"
+        <div className="text-center py-10 text-sm border border-dashed rounded-xl"
              style={{ color: 'var(--txt-dim)', borderColor: 'var(--border)' }}>
-          <KeyRound size={32} className="mx-auto mb-3 opacity-30" />
+          <KeyRound size={28} className="mx-auto mb-3 opacity-30" />
           <p>No environment variables set.</p>
           <p className="text-xs mt-1 opacity-60">Click "Add variable" to create one.</p>
         </div>
@@ -130,24 +129,40 @@ export default function EnvVarsEditor({ jobId }) {
                   onChange={(e) => updateRow(idx, 'key', e.target.value)}
                   placeholder="VARIABLE_NAME"
                   spellCheck={false}
-                  className="w-48 flex-shrink-0 input-field font-mono !py-2.5 !text-xs"
+                  className="w-48 flex-shrink-0 px-3 py-2 rounded-lg text-sm font-mono transition-all duration-200 outline-none"
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--txt)',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-glow)'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
                 />
-                <span className="font-mono text-lg" style={{ color: 'var(--txt-dim)' }}>=</span>
+                <span className="font-mono text-sm flex-shrink-0" style={{ color: 'var(--txt-dim)' }}>=</span>
                 {/* Value */}
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <input
                     type={visibleKeys.has(idx) ? 'text' : 'password'}
                     value={ev.value}
                     onChange={(e) => updateRow(idx, 'value', e.target.value)}
                     placeholder="value"
                     spellCheck={false}
-                    className="w-full input-field font-mono !py-2.5 !text-xs !pr-10"
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-sm font-mono transition-all duration-200 outline-none"
+                    style={{
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--txt)',
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 2px var(--accent-glow)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
                   />
                   <button
                     type="button"
                     onClick={() => toggleVisible(idx)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-200"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 transition-colors duration-200"
                     style={{ color: 'var(--txt-dim)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--txt-muted)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--txt-dim)'}
                   >
                     {visibleKeys.has(idx) ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
@@ -155,7 +170,7 @@ export default function EnvVarsEditor({ jobId }) {
                 {/* Delete */}
                 <button
                   onClick={() => removeRow(idx)}
-                  className="p-2.5 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+                  className="p-2 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 flex-shrink-0"
                   style={{ color: 'var(--txt-dim)' }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = '#ef4444';
@@ -176,7 +191,7 @@ export default function EnvVarsEditor({ jobId }) {
 
       {/* Save */}
       {envVars.length > 0 && (
-        <div className="flex justify-end mt-6">
+        <div className="flex justify-end mt-5">
           <button
             onClick={handleSave}
             disabled={saving}
