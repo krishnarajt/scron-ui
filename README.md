@@ -32,6 +32,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 - **Version restore** — revert to any previous version with one click
 
 ### Live Log Streaming
+![alt text](image-11.png)
 - **WebSocket-based** real-time log viewer — connects to the backend's broadcast channel
 - **Auto-scroll** with manual scroll lock when the user scrolls up
 - **Buffered catch-up** — late joiners receive recent history before the live stream
