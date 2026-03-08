@@ -26,11 +26,11 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const signup = useCallback(async (username, password) => {
+  const signup = useCallback(async (username, password, email = null) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await authApi.signup(username, password);
+      const data = await authApi.signup(username, password, email);
       setTokens(data.accessToken, data.refreshToken);
       setIsAuthenticated(true);
       return data;
@@ -54,8 +54,17 @@ export function AuthProvider({ children }) {
         setIsAuthenticated(false);
       }
     };
+    // Listen for the custom session-expired event dispatched by api.js
+    // This preserves unsaved state instead of hard-navigating to /login
+    const onSessionExpired = () => {
+      setIsAuthenticated(false);
+    };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener('scron:session-expired', onSessionExpired);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('scron:session-expired', onSessionExpired);
+    };
   }, []);
 
   return (

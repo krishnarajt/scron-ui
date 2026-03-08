@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jobs } from '../lib/api';
+import { jobs, tags as tagsApi } from '../lib/api';
 import JobForm from '../components/JobForm';
 import DashboardCharts from '../components/DashboardCharts';
 import { motion } from 'framer-motion';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import {
   Plus, Clock, ChevronRight,
   RefreshCw, Loader2, CheckCircle2, Zap,
-  BarChart3, ChevronDown, ChevronUp, Copy,
+  BarChart3, ChevronDown, ChevronUp, Copy, Tag, X,
 } from 'lucide-react';
 
 // Lazy-load cronstrue for human-readable cron descriptions
@@ -27,11 +27,22 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [triggeringId, setTriggeringId] = useState(null);
+  const [allTags, setAllTags] = useState([]);
+  const [activeTagId, setActiveTagId] = useState(null);
   const navigate = useNavigate();
 
-  const fetchJobs = useCallback(async () => {
+  const fetchTags = useCallback(async () => {
     try {
-      const data = await jobs.list();
+      const data = await tagsApi.list();
+      setAllTags(data.tags || []);
+    } catch (err) {
+      console.error('Failed to load tags', err);
+    }
+  }, []);
+
+  const fetchJobs = useCallback(async (tagId = null) => {
+    try {
+      const data = await jobs.list(tagId);
       setJobList(data.jobs);
       setTotal(data.total);
     } catch (err) {
@@ -41,7 +52,16 @@ export default function Dashboard() {
     }
   }, []);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => { fetchTags(); }, [fetchTags]);
+  useEffect(() => { fetchJobs(activeTagId); }, [fetchJobs, activeTagId]);
+
+  const handleTagFilter = (tagId) => {
+    if (activeTagId === tagId) {
+      setActiveTagId(null); // toggle off
+    } else {
+      setActiveTagId(tagId);
+    }
+  };
 
   const handleTrigger = async (e, jobId) => {
     e.stopPropagation();
@@ -59,7 +79,8 @@ export default function Dashboard() {
 
   const handleCreated = () => {
     setShowCreate(false);
-    fetchJobs();
+    fetchJobs(activeTagId);
+    fetchTags();
   };
 
   const handleDuplicate = async (e, jobId) => {
@@ -67,7 +88,7 @@ export default function Dashboard() {
     try {
       const newJob = await jobs.duplicate(jobId);
       toast.success(`Duplicated as "${newJob.name}"`);
-      fetchJobs();
+      fetchJobs(activeTagId);
     } catch (err) {
       toast.error('Failed to duplicate job');
       console.error(err);
@@ -104,7 +125,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchJobs}
+            onClick={() => fetchJobs(activeTagId)}
             className="p-2.5 rounded-xl transition-all duration-200"
             style={{ color: 'var(--txt-muted)' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.color = 'var(--txt)'; }}
@@ -141,11 +162,48 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ── Tag Filter ── */}
+      {allTags.length > 0 && (
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
+          <Tag size={13} style={{ color: 'var(--txt-dim)' }} />
+          {allTags.map((tag) => {
+            const isActive = activeTagId === tag.id;
+            return (
+              <button
+                key={tag.id}
+                onClick={() => handleTagFilter(tag.id)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-200"
+                style={{
+                  background: isActive ? `${tag.color}22` : 'var(--surface-2)',
+                  color: isActive ? tag.color : 'var(--txt-muted)',
+                  border: `1px solid ${isActive ? tag.color : 'var(--border)'}`,
+                }}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ background: tag.color }} />
+                {tag.name}
+                {isActive && <X size={10} />}
+              </button>
+            );
+          })}
+          {activeTagId && (
+            <button
+              onClick={() => setActiveTagId(null)}
+              className="text-[11px] font-medium transition-colors duration-200 ml-1"
+              style={{ color: 'var(--txt-dim)' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--txt)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--txt-dim)'}
+            >
+              Clear filter
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Jobs Section Header ── */}
       {jobList.length > 0 && (
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold" style={{ color: 'var(--txt-muted)' }}>
-            {total} job{total !== 1 ? 's' : ''} configured
+            {total} job{total !== 1 ? 's' : ''}{activeTagId ? ' (filtered)' : ''} configured
           </h2>
         </div>
       )}
@@ -241,6 +299,21 @@ export default function Dashboard() {
                   — {cronToHuman(job.cron_expression)}
                 </span>
               </div>
+              {/* Tags */}
+              {job.tags && job.tags.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  {job.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                      style={{ background: `${tag.color}18`, color: tag.color }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: tag.color }} />
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Actions */}

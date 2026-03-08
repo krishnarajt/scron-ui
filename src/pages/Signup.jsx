@@ -9,6 +9,7 @@ export default function Signup() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [email, setEmail] = useState('');
   const [localError, setLocalError] = useState(null);
   const { signup, loading, error, setError } = useAuth();
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function Signup() {
     }
 
     try {
-      await signup(username, password);
+      await signup(username, password, email || null);
       navigate('/');
     } catch {
       // error is set in context
@@ -146,6 +147,19 @@ export default function Signup() {
                 autoFocus
                 className="input-field"
                 placeholder="Choose a username"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wider"
+                     style={{ color: 'var(--txt-muted)' }}>
+                Email <span style={{ color: 'var(--txt-dim)' }}>(optional)</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setLocalError(null); }}
+                className="input-field"
+                placeholder="For email notifications"
               />
             </div>
             <div>

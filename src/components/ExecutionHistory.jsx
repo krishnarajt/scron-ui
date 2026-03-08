@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { jobs } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ChevronDown, Radio } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Loader2, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ChevronDown, Radio, StopCircle, RotateCcw } from 'lucide-react';
 
 function formatDuration(seconds) {
   if (seconds == null) return '—';
@@ -48,6 +49,8 @@ export default function ExecutionHistory({ jobId, onOpenLiveLog }) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [replayingId, setReplayingId] = useState(null);
 
   const fetchExecutions = useCallback(async () => {
     setLoading(true);
@@ -63,6 +66,41 @@ export default function ExecutionHistory({ jobId, onOpenLiveLog }) {
   }, [jobId]);
 
   useEffect(() => { fetchExecutions(); }, [fetchExecutions]);
+
+  const handleCancel = async (e, execId) => {
+    e.stopPropagation();
+    setCancellingId(execId);
+    try {
+      const result = await jobs.cancel(jobId, execId);
+      if (result.cancelled) {
+        toast.success('Cancellation signal sent');
+      } else {
+        toast.error(result.message || 'Could not cancel');
+      }
+      // Refresh after a short delay to show updated status
+      setTimeout(fetchExecutions, 1500);
+    } catch (err) {
+      toast.error('Failed to cancel execution');
+      console.error(err);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const handleReplay = async (e, execId) => {
+    e.stopPropagation();
+    setReplayingId(execId);
+    try {
+      await jobs.replay(jobId, execId);
+      toast.success('Execution replayed');
+      setTimeout(fetchExecutions, 1000);
+    } catch (err) {
+      toast.error('Failed to replay execution');
+      console.error(err);
+    } finally {
+      setReplayingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -164,11 +202,51 @@ export default function ExecutionHistory({ jobId, onOpenLiveLog }) {
                     </p>
                   </div>
 
-                  {/* Duration + expand indicator */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  {/* Duration + actions + expand indicator */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-xs font-mono" style={{ color: 'var(--txt-muted)' }}>
                       {formatDuration(exec.duration_seconds)}
                     </span>
+
+                    {/* Cancel button — only for running executions */}
+                    {exec.status === 'running' && (
+                      <button
+                        onClick={(e) => handleCancel(e, exec.id)}
+                        disabled={cancellingId === exec.id}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold uppercase transition-all duration-200"
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#ef4444',
+                          border: '1px solid rgba(239, 68, 68, 0.2)',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                        title="Cancel execution"
+                      >
+                        {cancellingId === exec.id ? <Loader2 size={10} className="animate-spin" /> : <StopCircle size={10} />}
+                        Cancel
+                      </button>
+                    )}
+
+                    {/* Replay button — only for completed executions (success or failure) */}
+                    {(exec.status === 'success' || exec.status === 'failure') && (
+                      <button
+                        onClick={(e) => handleReplay(e, exec.id)}
+                        disabled={replayingId === exec.id}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold uppercase transition-all duration-200"
+                        style={{
+                          background: 'var(--accent-glow)',
+                          color: 'var(--accent)',
+                          border: '1px solid transparent',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-3)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent-glow)'}
+                        title="Replay this execution with its exact script version"
+                      >
+                        {replayingId === exec.id ? <Loader2 size={10} className="animate-spin" /> : <RotateCcw size={10} />}
+                        Replay
+                      </button>
+                    )}
                     {hasDetail(exec) && (
                       <motion.div
                         animate={{ rotate: isExpanded ? 180 : 0 }}

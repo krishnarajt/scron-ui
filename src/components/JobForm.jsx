@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { jobs } from '../lib/api';
-import { X, Loader2, Save, Sparkles, HelpCircle, Clock } from 'lucide-react';
+import { jobs, tags as tagsApi, templates as templatesApi } from '../lib/api';
+import { X, Loader2, Save, Sparkles, HelpCircle, Clock, Tag, GitBranch, Timer, FileCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CodeEditor from './CodeEditor';
 import toast from 'react-hot-toast';
@@ -47,9 +47,35 @@ export default function JobForm({ job = null, onClose, onSaved }) {
   const [scriptType, setScriptType] = useState(job?.script_type || 'python');
   const [cronExpression, setCronExpression] = useState(job?.cron_expression || '');
   const [isActive, setIsActive] = useState(job?.is_active ?? true);
+  const [timeoutSeconds, setTimeoutSeconds] = useState(job?.timeout_seconds || 0);
+  const [dependsOn, setDependsOn] = useState(job?.depends_on || []);
+  const [tagIds, setTagIds] = useState(job?.tags?.map(t => t.id) || []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showCronHelp, setShowCronHelp] = useState(false);
+
+  // Data for dependency & tag selectors
+  const [allJobs, setAllJobs] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+  const [templateList, setTemplateList] = useState([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  // Fetch available jobs (for dependency picker), tags, and templates
+  useEffect(() => {
+    jobs.list().then(data => {
+      // Filter out the current job when editing
+      const filtered = (data.jobs || []).filter(j => j.id !== job?.id);
+      setAllJobs(filtered);
+    }).catch(() => {});
+    tagsApi.list().then(data => {
+      setAllTags(data.tags || []);
+    }).catch(() => {});
+    if (!isEdit) {
+      templatesApi.list().then(data => {
+        setTemplateList(data.templates || []);
+      }).catch(() => {});
+    }
+  }, [job?.id, isEdit]);
 
   // Close on Escape
   useEffect(() => {
@@ -58,23 +84,35 @@ export default function JobForm({ job = null, onClose, onSaved }) {
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
+  // Apply a template
+  const applyTemplate = (tmpl) => {
+    setName(tmpl.name || '');
+    setDescription(tmpl.description || '');
+    setScriptContent(tmpl.script_content || '');
+    setScriptType(tmpl.script_type || 'python');
+    setCronExpression(tmpl.cron_expression || '');
+    setShowTemplates(false);
+    toast.success(`Template "${tmpl.name}" applied`);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
 
     try {
+      const payload = {
+        name, description, script_content: scriptContent,
+        script_type: scriptType, cron_expression: cronExpression, is_active: isActive,
+        timeout_seconds: timeoutSeconds,
+        depends_on: dependsOn,
+        tag_ids: tagIds,
+      };
       if (isEdit) {
-        await jobs.update(job.id, {
-          name, description, script_content: scriptContent,
-          script_type: scriptType, cron_expression: cronExpression, is_active: isActive,
-        });
+        await jobs.update(job.id, payload);
         toast.success('Job updated successfully');
       } else {
-        await jobs.create({
-          name, description, script_content: scriptContent,
-          script_type: scriptType, cron_expression: cronExpression, is_active: isActive,
-        });
+        await jobs.create(payload);
         toast.success('Job created successfully');
       }
       onSaved();
@@ -147,6 +185,50 @@ export default function JobForm({ job = null, onClose, onSaved }) {
             >
               {error}
             </motion.div>
+          )}
+
+          {/* Template picker — only for new jobs */}
+          {!isEdit && templateList.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowTemplates(!showTemplates)}
+                className="flex items-center gap-2 text-xs font-semibold transition-colors duration-200 mb-2"
+                style={{ color: 'var(--accent)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-bright)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--accent)'}
+              >
+                <FileCode size={13} />
+                <span>{showTemplates ? 'Hide templates' : 'Start from a template'}</span>
+              </button>
+              <AnimatePresence>
+                {showTemplates && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex flex-wrap gap-2 p-3 rounded-xl"
+                         style={{ background: 'var(--surface-0)', border: '1px solid var(--border)' }}>
+                      {templateList.map((tmpl) => (
+                        <button
+                          key={tmpl.id}
+                          type="button"
+                          onClick={() => applyTemplate(tmpl)}
+                          className="px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200"
+                          style={{ background: 'var(--surface-2)', color: 'var(--txt-muted)', border: '1px solid var(--border)' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+                        >
+                          {tmpl.name}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
           {/* Name */}
@@ -358,6 +440,104 @@ export default function JobForm({ job = null, onClose, onSaved }) {
               maxHeight={400}
             />
           </div>
+
+          {/* Timeout */}
+          <div>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wider"
+                   style={{ color: 'var(--txt-muted)' }}>
+              <span className="flex items-center gap-1.5">
+                <Timer size={12} />
+                Timeout <span style={{ color: 'var(--txt-dim)' }}>(seconds, 0 = default)</span>
+              </span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={timeoutSeconds}
+              onChange={(e) => setTimeoutSeconds(parseInt(e.target.value) || 0)}
+              className="input-field"
+              placeholder="3600"
+            />
+          </div>
+
+          {/* Dependencies */}
+          {allJobs.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium mb-2 uppercase tracking-wider"
+                     style={{ color: 'var(--txt-muted)' }}>
+                <span className="flex items-center gap-1.5">
+                  <GitBranch size={12} />
+                  Dependencies <span style={{ color: 'var(--txt-dim)' }}>(upstream jobs)</span>
+                </span>
+              </label>
+              <div className="flex flex-wrap gap-2 p-3 rounded-xl"
+                   style={{ background: 'var(--surface-0)', border: '1px solid var(--border)', minHeight: '42px' }}>
+                {allJobs.map((j) => {
+                  const selected = dependsOn.includes(j.id);
+                  return (
+                    <button
+                      key={j.id}
+                      type="button"
+                      onClick={() => {
+                        if (selected) setDependsOn(dependsOn.filter(d => d !== j.id));
+                        else setDependsOn([...dependsOn, j.id]);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
+                      style={{
+                        background: selected ? 'var(--accent-glow)' : 'var(--surface-2)',
+                        color: selected ? 'var(--accent)' : 'var(--txt-muted)',
+                        border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                      }}
+                    >
+                      {j.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {dependsOn.length > 0 && (
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--txt-dim)' }}>
+                  This job will only run after {dependsOn.length} upstream job{dependsOn.length !== 1 ? 's' : ''} succeed.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Tags */}
+          {allTags.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium mb-2 uppercase tracking-wider"
+                     style={{ color: 'var(--txt-muted)' }}>
+                <span className="flex items-center gap-1.5">
+                  <Tag size={12} />
+                  Tags
+                </span>
+              </label>
+              <div className="flex flex-wrap gap-2 p-3 rounded-xl"
+                   style={{ background: 'var(--surface-0)', border: '1px solid var(--border)', minHeight: '42px' }}>
+                {allTags.map((t) => {
+                  const selected = tagIds.includes(t.id);
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        if (selected) setTagIds(tagIds.filter(id => id !== t.id));
+                        else setTagIds([...tagIds, t.id]);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200"
+                      style={{
+                        background: selected ? `${t.color}22` : 'var(--surface-2)',
+                        color: selected ? t.color : 'var(--txt-muted)',
+                        border: `1px solid ${selected ? t.color : 'var(--border)'}`,
+                      }}
+                    >
+                      {t.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Active toggle */}
           <div className="flex items-center gap-3">

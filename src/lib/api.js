@@ -102,9 +102,10 @@ export async function api(path, options = {}) {
       headers['Authorization'] = `Bearer ${newToken}`;
       res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
     } catch {
-      // Refresh failed — force logout
+      // Refresh failed — dispatch custom event to preserve unsaved state
+      // instead of hard-navigating to /login
       clearTokens();
-      window.location.href = '/login';
+      window.dispatchEvent(new CustomEvent('scron:session-expired'));
       throw new Error('Session expired');
     }
   }
@@ -128,8 +129,11 @@ export async function api(path, options = {}) {
 export const auth = {
   login: (username, password) =>
     api('/auth/login', { method: 'POST', body: { username, password }, noAuth: true }),
-  signup: (username, password) =>
-    api('/auth/signup', { method: 'POST', body: { username, password }, noAuth: true }),
+  signup: (username, password, email = null) => {
+    const body = { username, password };
+    if (email) body.email = email;
+    return api('/auth/signup', { method: 'POST', body, noAuth: true });
+  },
   logout: () => {
     const rt = _refreshToken;
     if (rt) api('/auth/logout', { method: 'POST', body: { refreshToken: rt } }).catch(() => {});
@@ -138,12 +142,23 @@ export const auth = {
 };
 
 export const jobs = {
-  list: () => api('/jobs'),
+  list: (tagId = null) => {
+    const params = tagId ? `?tag_id=${tagId}` : '';
+    return api(`/jobs${params}`);
+  },
   get: (id) => api(`/jobs/${id}`),
   create: (data) => api('/jobs', { method: 'POST', body: data }),
   update: (id, data) => api(`/jobs/${id}`, { method: 'PATCH', body: data }),
   delete: (id) => api(`/jobs/${id}`, { method: 'DELETE' }),
   trigger: (id) => api(`/jobs/${id}/trigger`, { method: 'POST' }),
+
+  // Cancel a running execution
+  cancel: (jobId, executionId) =>
+    api(`/jobs/${jobId}/executions/${executionId}/cancel`, { method: 'POST' }),
+
+  // Replay a past execution using its exact script version
+  replay: (jobId, executionId) =>
+    api(`/jobs/${jobId}/replay`, { method: 'POST', body: { execution_id: executionId } }),
 
   // Environment variables
   getEnv: (jobId) => api(`/jobs/${jobId}/env`),
@@ -182,6 +197,31 @@ export const jobs = {
   getRequirements: () => api('/config/requirements'),
   updateRequirements: (content) =>
     api('/config/requirements', { method: 'PUT', body: { content } }),
+};
+
+// ── Tags ──────────────────────────────────────────────────────
+export const tags = {
+  list: () => api('/tags'),
+  create: (name, color) => api('/tags', { method: 'POST', body: { name, color } }),
+  update: (id, data) => api(`/tags/${id}`, { method: 'PATCH', body: data }),
+  delete: (id) => api(`/tags/${id}`, { method: 'DELETE' }),
+};
+
+// ── Notifications ─────────────────────────────────────────────
+export const notifications = {
+  get: () => api('/notifications'),
+  update: (data) => api('/notifications', { method: 'PUT', body: data }),
+};
+
+// ── Templates ─────────────────────────────────────────────────
+export const templates = {
+  list: () => api('/templates'),
+};
+
+// ── User Profile ──────────────────────────────────────────────
+export const profile = {
+  get: () => api('/profile'),
+  update: (data) => api('/profile', { method: 'PATCH', body: data }),
 };
 
 export const analytics = {

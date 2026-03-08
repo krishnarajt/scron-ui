@@ -27,11 +27,23 @@ export default function LiveLog({ jobId, executionId, onClose }) {
   const containerRef = useRef(null);
 
   // Build WebSocket URL
+  // In production (Vercel), we connect directly to the backend host because
+  // Vercel rewrites only handle HTTP, not WebSocket upgrades.
+  // In development, Vite's proxy handles WS forwarding on the same origin.
   const getWsUrl = useCallback(() => {
     const { accessToken } = getTokens();
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const base = `${protocol}//${host}/api/ws/logs`;
+    const wsBase = import.meta.env.VITE_WS_BASE;
+
+    let base;
+    if (wsBase) {
+      // Explicit WS base URL configured (production)
+      base = `${wsBase}/api/ws/logs`;
+    } else {
+      // Dev mode — use same origin via Vite proxy
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      base = `${protocol}//${host}/api/ws/logs`;
+    }
 
     if (executionId) {
       return `${base}/${executionId}?token=${accessToken}`;

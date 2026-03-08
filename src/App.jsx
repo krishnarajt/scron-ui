@@ -9,6 +9,9 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import JobDetail from './pages/JobDetail';
 import Requirements from './pages/Requirements';
+import Tags from './pages/Tags';
+import Notifications from './pages/Notifications';
+import Profile from './pages/Profile';
 
 export default function App() {
   return (
@@ -53,7 +56,10 @@ export default function App() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
+              <Route path="/tags" element={<Tags />} />
               <Route path="/requirements" element={<Requirements />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
 
             {/* Catch-all */}

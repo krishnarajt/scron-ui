@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Package, LogOut, Terminal, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Terminal, PanelLeftClose, PanelLeftOpen, Tag, Bell, User } from 'lucide-react';
 import ThemeSwitcher from './ThemeSwitcher';
 import ParticleCanvas from './ParticleCanvas';
 
@@ -27,7 +27,10 @@ export default function Layout() {
 
   const navLinks = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/tags', icon: Tag, label: 'Tags' },
     { to: '/requirements', icon: Package, label: 'Requirements' },
+    { to: '/notifications', icon: Bell, label: 'Notifications' },
+    { to: '/profile', icon: User, label: 'Profile' },
   ];
 
   return (
