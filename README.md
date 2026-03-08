@@ -10,7 +10,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 ### Dashboard
 
-![alt text](image-10.png)
+![alt text](./.images/image-10.png)
 
 - **Overview cards** — total jobs, active/paused count, execution success rate, average duration
 - **Execution timeline chart** — daily success/failure/running counts for the last N days (Recharts area chart)
@@ -19,7 +19,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 ### Job Management
 
-![alt text](image-6.png)
+![alt text](./.images/image-6.png)
 
 - **Job list** with status badges (active/paused), cron expression in human-readable form (via `cronstrue`), tags, and quick-action buttons
 - **Create/Edit form** with fields for name, description, script type (Python/Bash), cron expression, timeout, dependencies, and tags
@@ -29,8 +29,8 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 ### Code Editor
 
-![alt text](image-7.png)
-![alt text](image-9.png)
+![alt text](./.images/image-7.png)
+![alt text](./.images/image-9.png)
 
 - **CodeMirror 6** with Python and Bash syntax highlighting
 - **Script version history** — browse all past versions with timestamps and change summaries
@@ -38,7 +38,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 ### Live Log Streaming
 
-![alt text](image-11.png)
+![alt text](./.images/image-11.png)
 
 - **WebSocket-based** real-time log viewer — connects to the backend's broadcast channel
 - **Auto-scroll** with manual scroll lock when the user scrolls up
@@ -46,7 +46,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 ### Execution History
 
-![alt text](image-5.png)
+![alt text](./.images/image-5.png)
 
 - **Paginated table** of all past executions with status, duration, exit code, and timestamps
 - **Expandable log output** — click an execution to see its captured stdout/stderr
@@ -57,11 +57,11 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 - **Requirements File** — Easily write the package name required for your script within the UI.
 
-![alt text](image-4.png)
+![alt text](./.images/image-4.png)
 
 ### Environment Variables
 
-![alt text](image-8.png)
+![alt text](./.images/image-8.png)
 
 - **Encrypted at rest** — values are Fernet-encrypted in the backend; the UI never sees raw ciphertext
 - **Inline editor** — add, edit, and delete key-value pairs with a clean table UI
@@ -69,7 +69,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 ### Analytics (Per-Job)
 
-![alt text](msedge_Rz2OMM9FCk.png)
+![alt ./.images/text](msedge_Rz2OMM9FCk.png)
 
 - **Stats card** — total executions, success rate, avg/min/max duration, last run status
 - **Duration trend chart** — line chart of execution duration over the last N runs
@@ -78,16 +78,16 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 ### Notifications Settings
 
 - **Telegram** — enter chat ID, toggle on/off
-![alt text](image-13.png)
-![alt text](image-14.png)
+![alt text](./.images/image-13.png)
+![alt text](./.images/image-14.png)
 - **Email** — uses the email from user profile, toggle on/off
-![alt text](image-12.png)
+![alt text](./.images/image-12.png)
 - **Trigger selector** — "On failure only" (default), "Always", or "Never"
-![alt text](image-15.png)
+![alt text](./.images/image-15.png)
 
 ### User Profile
 
-![alt text](image-20.png)
+![alt text](./.images/image-20.png)
 
 - **Display name** and **email** management
 - Email is required before enabling email notifications
@@ -96,7 +96,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 
 - **Pre-built templates** — Health Check (HTTP), Database Backup (pg_dump), Disk Space Alert, Slack Webhook, File Cleanup, Python Starter
 - **One-click create** — select a template, customise, and save as a new job
-![alt text](image-19.png)
+![alt text](./.images/image-19.png)
 
 ### Authentication
 
@@ -105,7 +105,7 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 - **Login and Signup** pages with optional email during registration
 -
 
-![alt text](image-18.png)
+![alt text](./.images/image-18.png)
 
 ### UX
 
@@ -114,12 +114,12 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 - **Toast notifications** via `react-hot-toast`
 - **Animated transitions** via Framer Motion
 - **Particle canvas** background on auth pages
-![alt text](image.png)
-![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image-3.png)
-![alt text](image-16.png)
-![alt text](image-17.png)
+![alt ./.images/text](image.png)
+![alt text](./.images/image-1.png)
+![alt text](./.images/image-2.png)
+![alt text](./.images/image-3.png)
+![alt text](./.images/image-16.png)
+![alt text](./.images/image-17.png)
 
 ## Tech Stack
 
@@ -149,7 +149,7 @@ scron-ui/
 ├── public/
 │   ├── manifest.json                # PWA manifest
 │   ├── favicon.svg                  # App icon
-│   └── *.png                        # Apple touch icon, PWA icons
+./.images/│   └── *.png                        # Apple touch icon, PWA icons
 ├── src/
 │   ├── main.jsx                     # React DOM entry point
 │   ├── App.jsx                      # Router, providers, route definitions
