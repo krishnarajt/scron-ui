@@ -128,15 +128,15 @@ export default function JobDetail() {
       </button>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{job.name}</h1>
-            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-mono font-semibold uppercase"
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-2xl font-bold tracking-tight">{job.name}</h1>
+            <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold uppercase"
                   style={{ background: 'var(--surface-3)', color: 'var(--txt-muted)' }}>
               {job.script_type}
             </span>
-            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-semibold"
+            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold"
                   style={{
                     background: job.is_active ? 'var(--accent-glow)' : 'var(--surface-3)',
                     color: job.is_active ? 'var(--accent)' : 'var(--txt-dim)',
@@ -153,7 +153,7 @@ export default function JobDetail() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Toggle active */}
           <button
             onClick={handleToggleActive}
