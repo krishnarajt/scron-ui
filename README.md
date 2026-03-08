@@ -9,13 +9,16 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 ## Features
 
 ### Dashboard
+
 ![alt text](image-10.png)
+
 - **Overview cards** — total jobs, active/paused count, execution success rate, average duration
 - **Execution timeline chart** — daily success/failure/running counts for the last N days (Recharts area chart)
 - **Per-job success breakdown** — stacked bar chart showing each job's execution distribution
 - **Hourly heatmap** — hour-of-day × day-of-week grid showing when jobs run most frequently
 
 ### Job Management
+
 ![alt text](image-6.png)
 
 - **Job list** with status badges (active/paused), cron expression in human-readable form (via `cronstrue`), tags, and quick-action buttons
@@ -25,37 +28,47 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 - **Job duplication** — one-click clone with all settings, env vars, and tags
 
 ### Code Editor
+
 ![alt text](image-7.png)
 ![alt text](image-9.png)
+
 - **CodeMirror 6** with Python and Bash syntax highlighting
 - **Script version history** — browse all past versions with timestamps and change summaries
 - **Version restore** — revert to any previous version with one click
 
 ### Live Log Streaming
+
 ![alt text](image-11.png)
+
 - **WebSocket-based** real-time log viewer — connects to the backend's broadcast channel
 - **Auto-scroll** with manual scroll lock when the user scrolls up
 - **Buffered catch-up** — late joiners receive recent history before the live stream
 
 ### Execution History
+
 ![alt text](image-5.png)
+
 - **Paginated table** of all past executions with status, duration, exit code, and timestamps
 - **Expandable log output** — click an execution to see its captured stdout/stderr
 - **Replay button** — re-run a past execution using the exact script version from that run
 - **Cancel button** — stop a running execution (sends SIGTERM to the subprocess)
 
 ## Dependency Management
-- **Requirements File** — Easily write the package name required for your script within the UI. 
+
+- **Requirements File** — Easily write the package name required for your script within the UI.
 
 ![alt text](image-4.png)
 
 ### Environment Variables
+
 ![alt text](image-8.png)
+
 - **Encrypted at rest** — values are Fernet-encrypted in the backend; the UI never sees raw ciphertext
 - **Inline editor** — add, edit, and delete key-value pairs with a clean table UI
 - **Bulk import** — replace all env vars at once
 
 ### Analytics (Per-Job)
+
 ![alt text](msedge_Rz2OMM9FCk.png)
 
 - **Stats card** — total executions, success rate, avg/min/max duration, last run status
@@ -65,23 +78,37 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 ### Notifications Settings
 
 - **Telegram** — enter chat ID, toggle on/off
+![alt text](image-13.png)
+![alt text](image-14.png)
 - **Email** — uses the email from user profile, toggle on/off
+![alt text](image-12.png)
 - **Trigger selector** — "On failure only" (default), "Always", or "Never"
+![alt text](image-15.png)
 
 ### User Profile
+
+![alt text](image-20.png)
+
 - **Display name** and **email** management
 - Email is required before enabling email notifications
 
 ### Job Templates
+
 - **Pre-built templates** — Health Check (HTTP), Database Backup (pg_dump), Disk Space Alert, Slack Webhook, File Cleanup, Python Starter
 - **One-click create** — select a template, customise, and save as a new job
+![alt text](image-19.png)
 
 ### Authentication
+
 - **JWT-based** — access token (30 min) + refresh token (30 days) with automatic rotation
 - **Graceful session expiry** — dispatches a `scron:session-expired` custom event instead of hard-navigating to `/login`, preserving unsaved state
 - **Login and Signup** pages with optional email during registration
+-
+
+![alt text](image-18.png)
 
 ### UX
+
 - **Dark/Light/System theme** with smooth transitions (Tailwind CSS)
 - **Responsive layout** — sidebar navigation, mobile-friendly
 - **Toast notifications** via `react-hot-toast`
@@ -91,21 +118,24 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 ![alt text](image-1.png)
 ![alt text](image-2.png)
 ![alt text](image-3.png)
+![alt text](image-16.png)
+![alt text](image-17.png)
+
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | React 18 |
-| Build tool | Vite 6 |
-| Routing | React Router v6 |
-| Styling | Tailwind CSS 3 |
-| Charts | Recharts |
-| Code editor | CodeMirror 6 (`@uiw/react-codemirror`) |
-| Icons | Lucide React |
-| Animations | Framer Motion |
-| Notifications | react-hot-toast |
-| Cron display | cronstrue (human-readable cron) |
-| Deployment | Vercel / static hosting |
+| Layer         | Technology                             |
+| ------------- | -------------------------------------- |
+| Framework     | React 18                               |
+| Build tool    | Vite 6                                 |
+| Routing       | React Router v6                        |
+| Styling       | Tailwind CSS 3                         |
+| Charts        | Recharts                               |
+| Code editor   | CodeMirror 6 (`@uiw/react-codemirror`) |
+| Icons         | Lucide React                           |
+| Animations    | Framer Motion                          |
+| Notifications | react-hot-toast                        |
+| Cron display  | cronstrue (human-readable cron)        |
+| Deployment    | Vercel / static hosting                |
 
 ## Project Structure
 
@@ -156,6 +186,7 @@ scron-ui/
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
 
@@ -204,15 +235,15 @@ The API client handles authentication transparently:
 
 Available modules:
 
-| Module | Methods |
-|---|---|
-| `auth` | `login`, `signup`, `logout` |
-| `profile` | `get`, `update` |
-| `jobs` | `list`, `get`, `create`, `update`, `delete`, `trigger`, `cancel`, `replay`, `duplicate`, `getEnv`, `setEnv`, `setEnvBulk`, `deleteEnv`, `getExecutions`, `getVersions`, `getVersion`, `restoreVersion`, `getNextRuns`, `getStreamStatus`, `getRequirements`, `updateRequirements` |
-| `tags` | `list`, `create`, `update`, `delete` |
-| `notifications` | `get`, `update` |
-| `templates` | `list` |
-| `analytics` | `getOverview`, `getTimeline`, `getHeatmap`, `getJobBreakdown`, `getJobStats`, `getJobDuration`, `getJobTimeline` |
+| Module          | Methods                                                                                                                                                                                                                                                                           |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`          | `login`, `signup`, `logout`                                                                                                                                                                                                                                                       |
+| `profile`       | `get`, `update`                                                                                                                                                                                                                                                                   |
+| `jobs`          | `list`, `get`, `create`, `update`, `delete`, `trigger`, `cancel`, `replay`, `duplicate`, `getEnv`, `setEnv`, `setEnvBulk`, `deleteEnv`, `getExecutions`, `getVersions`, `getVersion`, `restoreVersion`, `getNextRuns`, `getStreamStatus`, `getRequirements`, `updateRequirements` |
+| `tags`          | `list`, `create`, `update`, `delete`                                                                                                                                                                                                                                              |
+| `notifications` | `get`, `update`                                                                                                                                                                                                                                                                   |
+| `templates`     | `list`                                                                                                                                                                                                                                                                            |
+| `analytics`     | `getOverview`, `getTimeline`, `getHeatmap`, `getJobBreakdown`, `getJobStats`, `getJobDuration`, `getJobTimeline`                                                                                                                                                                  |
 
 ## License
 
