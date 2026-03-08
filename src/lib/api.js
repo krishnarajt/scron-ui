@@ -102,9 +102,12 @@ export async function api(path, options = {}) {
       headers['Authorization'] = `Bearer ${newToken}`;
       res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
     } catch {
-      // Refresh failed — force logout
+      // Refresh failed — dispatch event so the app can handle gracefully
+      // (e.g. show a modal, save draft state) instead of losing unsaved work
       clearTokens();
-      window.location.href = '/login';
+      window.dispatchEvent(new CustomEvent('scron:session-expired', {
+        detail: { reason: 'refresh_failed' },
+      }));
       throw new Error('Session expired');
     }
   }
@@ -128,8 +131,8 @@ export async function api(path, options = {}) {
 export const auth = {
   login: (username, password) =>
     api('/auth/login', { method: 'POST', body: { username, password }, noAuth: true }),
-  signup: (username, password) =>
-    api('/auth/signup', { method: 'POST', body: { username, password }, noAuth: true }),
+  signup: (username, password, email = null) =>
+    api('/auth/signup', { method: 'POST', body: { username, password, email }, noAuth: true }),
   logout: () => {
     const rt = _refreshToken;
     if (rt) api('/auth/logout', { method: 'POST', body: { refreshToken: rt } }).catch(() => {});
@@ -137,13 +140,26 @@ export const auth = {
   },
 };
 
+export const profile = {
+  get: () => api('/profile'),
+  update: (data) => api('/profile', { method: 'PATCH', body: data }),
+};
+
 export const jobs = {
-  list: () => api('/jobs'),
+  list: (tagId = null) => api(`/jobs${tagId ? `?tag_id=${tagId}` : ''}`),
   get: (id) => api(`/jobs/${id}`),
   create: (data) => api('/jobs', { method: 'POST', body: data }),
   update: (id, data) => api(`/jobs/${id}`, { method: 'PATCH', body: data }),
   delete: (id) => api(`/jobs/${id}`, { method: 'DELETE' }),
   trigger: (id) => api(`/jobs/${id}/trigger`, { method: 'POST' }),
+
+  // Cancel a running execution
+  cancel: (jobId, executionId) =>
+    api(`/jobs/${jobId}/executions/${executionId}/cancel`, { method: 'POST' }),
+
+  // Replay a past execution
+  replay: (jobId, executionId) =>
+    api(`/jobs/${jobId}/replay`, { method: 'POST', body: { execution_id: executionId } }),
 
   // Environment variables
   getEnv: (jobId) => api(`/jobs/${jobId}/env`),
@@ -182,6 +198,23 @@ export const jobs = {
   getRequirements: () => api('/config/requirements'),
   updateRequirements: (content) =>
     api('/config/requirements', { method: 'PUT', body: { content } }),
+};
+
+export const tags = {
+  list: () => api('/tags'),
+  create: (name, color = '#6366f1') =>
+    api('/tags', { method: 'POST', body: { name, color } }),
+  update: (id, data) => api(`/tags/${id}`, { method: 'PATCH', body: data }),
+  delete: (id) => api(`/tags/${id}`, { method: 'DELETE' }),
+};
+
+export const notifications = {
+  get: () => api('/notifications'),
+  update: (data) => api('/notifications', { method: 'PUT', body: data }),
+};
+
+export const templates = {
+  list: () => api('/templates'),
 };
 
 export const analytics = {

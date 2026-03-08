@@ -54,8 +54,17 @@ export function AuthProvider({ children }) {
         setIsAuthenticated(false);
       }
     };
+    // Handle session expiry event dispatched by api.js
+    const onSessionExpired = () => {
+      setIsAuthenticated(false);
+      setError('Your session has expired. Please log in again.');
+    };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener('scron:session-expired', onSessionExpired);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('scron:session-expired', onSessionExpired);
+    };
   }, []);
 
   return (
