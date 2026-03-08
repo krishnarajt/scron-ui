@@ -32,7 +32,7 @@ export default function LiveLog({ jobId, executionId, onClose }) {
   // In development, Vite's proxy handles WS forwarding on the same origin.
   const getWsUrl = useCallback(() => {
     const { accessToken } = getTokens();
-    const wsBase = import.meta.env.VITE_WS_BASE;
+    const wsBase = 'wss://scron_backend.krishnarajthadesar.in';
 
     let base;
     if (wsBase) {
