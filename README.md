@@ -9,12 +9,15 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 ## Features
 
 ### Dashboard
+![alt text](image-10.png)
 - **Overview cards** — total jobs, active/paused count, execution success rate, average duration
 - **Execution timeline chart** — daily success/failure/running counts for the last N days (Recharts area chart)
 - **Per-job success breakdown** — stacked bar chart showing each job's execution distribution
 - **Hourly heatmap** — hour-of-day × day-of-week grid showing when jobs run most frequently
 
 ### Job Management
+![alt text](image-6.png)
+
 - **Job list** with status badges (active/paused), cron expression in human-readable form (via `cronstrue`), tags, and quick-action buttons
 - **Create/Edit form** with fields for name, description, script type (Python/Bash), cron expression, timeout, dependencies, and tags
 - **Dependency selector** — pick upstream jobs from a dropdown; shows dependency chain visually
@@ -22,6 +25,8 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 - **Job duplication** — one-click clone with all settings, env vars, and tags
 
 ### Code Editor
+![alt text](image-7.png)
+![alt text](image-9.png)
 - **CodeMirror 6** with Python and Bash syntax highlighting
 - **Script version history** — browse all past versions with timestamps and change summaries
 - **Version restore** — revert to any previous version with one click
@@ -32,22 +37,32 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 - **Buffered catch-up** — late joiners receive recent history before the live stream
 
 ### Execution History
+![alt text](image-5.png)
 - **Paginated table** of all past executions with status, duration, exit code, and timestamps
 - **Expandable log output** — click an execution to see its captured stdout/stderr
 - **Replay button** — re-run a past execution using the exact script version from that run
 - **Cancel button** — stop a running execution (sends SIGTERM to the subprocess)
 
+## Dependency Management
+- **Requirements File** — Easily write the package name required for your script within the UI. 
+
+![alt text](image-4.png)
+
 ### Environment Variables
+![alt text](image-8.png)
 - **Encrypted at rest** — values are Fernet-encrypted in the backend; the UI never sees raw ciphertext
 - **Inline editor** — add, edit, and delete key-value pairs with a clean table UI
 - **Bulk import** — replace all env vars at once
 
 ### Analytics (Per-Job)
+![alt text](msedge_Rz2OMM9FCk.png)
+
 - **Stats card** — total executions, success rate, avg/min/max duration, last run status
 - **Duration trend chart** — line chart of execution duration over the last N runs
 - **Daily timeline** — per-job version of the global execution timeline
 
 ### Notifications Settings
+
 - **Telegram** — enter chat ID, toggle on/off
 - **Email** — uses the email from user profile, toggle on/off
 - **Trigger selector** — "On failure only" (default), "Always", or "Never"
@@ -71,7 +86,10 @@ Even with a well-built backend API, managing cron jobs through curl or Postman i
 - **Toast notifications** via `react-hot-toast`
 - **Animated transitions** via Framer Motion
 - **Particle canvas** background on auth pages
-
+![alt text](image.png)
+![alt text](image-1.png)
+![alt text](image-2.png)
+![alt text](image-3.png)
 ## Tech Stack
 
 | Layer | Technology |
