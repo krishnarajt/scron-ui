@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTheme, THEMES } from '../context/ThemeContext';
-import { Palette, Check } from 'lucide-react';
+import { Palette, Check, Monitor } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * ThemeSwitcher — A sleek dropdown for switching between visual themes.
- * Shows colored accent dots and theme names.
- * Supports a collapsed mode where only the icon is shown.
+ * Shows colored accent dots and theme names. Includes "System Auto" option
+ * that follows the OS light/dark preference.
  *
  * Props:
  *   collapsed — boolean, when true renders as a centered icon button
  */
 export default function ThemeSwitcher({ collapsed = false }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -50,7 +50,7 @@ export default function ThemeSwitcher({ collapsed = false }) {
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="absolute bottom-full mb-2 w-56 p-2 rounded-xl border shadow-2xl z-50"
             style={{
-              left: collapsed ? '0' : '0',
+              left: '0',
               background: 'var(--surface-1)',
               borderColor: 'var(--border)',
               boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
@@ -60,36 +60,76 @@ export default function ThemeSwitcher({ collapsed = false }) {
                style={{ color: 'var(--txt-dim)' }}>
               Choose theme
             </p>
-            {THEMES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => { setTheme(t.id); setOpen(false); }}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group"
-                style={{
-                  color: theme === t.id ? 'var(--accent)' : 'var(--txt-muted)',
-                  background: theme === t.id ? 'var(--accent-glow)' : 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  if (theme !== t.id) e.currentTarget.style.background = 'var(--surface-3)';
-                }}
-                onMouseLeave={(e) => {
-                  if (theme !== t.id) e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                {/* Accent color dot */}
-                <div
-                  className="w-4 h-4 rounded-full flex-shrink-0 transition-all duration-200"
+            {THEMES.map((t) => {
+              const isSelected = theme === t.id;
+              const isAuto = t.id === 'auto';
+
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => { setTheme(t.id); setOpen(false); }}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group"
                   style={{
-                    background: t.accent,
-                    boxShadow: theme === t.id ? `0 0 12px ${t.accent}40` : 'none',
+                    color: isSelected ? 'var(--accent)' : 'var(--txt-muted)',
+                    background: isSelected ? 'var(--accent-glow)' : 'transparent',
                   }}
-                />
-                <span className="flex-1 text-left">{t.name}</span>
-                {theme === t.id && (
-                  <Check size={14} style={{ color: 'var(--accent)' }} />
-                )}
-              </button>
-            ))}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = 'var(--surface-3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {isAuto ? (
+                    /* System Auto gets a monitor icon instead of a color dot */
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                         style={{
+                           background: isSelected ? 'var(--accent-glow)' : 'var(--surface-3)',
+                         }}>
+                      <Monitor size={10} style={{
+                        color: isSelected ? 'var(--accent)' : 'var(--txt-dim)',
+                      }} />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0 transition-all duration-200"
+                      style={{
+                        background: t.accent,
+                        boxShadow: isSelected ? `0 0 12px ${t.accent}40` : 'none',
+                      }}
+                    />
+                  )}
+                  <div className="flex-1 text-left">
+                    <span>{t.name}</span>
+                    {isAuto && isSelected && (
+                      <span className="block text-[10px] mt-0.5"
+                            style={{ color: 'var(--txt-dim)' }}>
+                        Using {resolvedTheme === 'arctic' ? 'light' : 'dark'}
+                      </span>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <Check size={14} style={{ color: 'var(--accent)' }} />
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Separator + mode labels */}
+            <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
+              <div className="flex gap-3 px-3 py-1.5">
+                <span className="text-[9px] font-medium uppercase tracking-wider"
+                      style={{ color: 'var(--txt-dim)' }}>
+                  Dark: Emerald, Cyber, Ocean, Solar, Rosé
+                </span>
+              </div>
+              <div className="flex gap-3 px-3 pb-1">
+                <span className="text-[9px] font-medium uppercase tracking-wider"
+                      style={{ color: 'var(--txt-dim)' }}>
+                  Light: Arctic
+                </span>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

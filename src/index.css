@@ -617,3 +617,67 @@ textarea.code-editor {
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0.5;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE / MOBILE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* On mobile screens, reduce padding and font sizes */
+@media (max-width: 767px) {
+  /* Page headings */
+  .gradient-text {
+    font-size: 1.25rem;
+  }
+
+  /* Stat cards: 2-col on mobile */
+  .stat-glow {
+    padding: 0.75rem;
+  }
+
+  /* Code editor: reduce height */
+  .code-editor-wrapper .cm-editor {
+    max-height: 300px !important;
+  }
+
+  /* Tighter card padding */
+  .card {
+    border-radius: 12px;
+  }
+
+  /* Tab text smaller */
+  .tab-active::after {
+    height: 2px;
+  }
+
+  /* Modal: full-width on mobile */
+  .modal-backdrop + div {
+    margin: 0 8px;
+    max-height: 95vh;
+  }
+
+  /* Button primary: slightly smaller */
+  .btn-primary {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Input fields: tighter */
+  .input-field {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Safe area insets for iOS notch/home indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .noise-bg {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Bottom nav safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  nav[class*="fixed bottom-0"] {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+  }
+}

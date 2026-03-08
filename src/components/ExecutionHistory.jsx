@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { jobs } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ChevronDown } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ChevronDown, Radio } from 'lucide-react';
 
 function formatDuration(seconds) {
   if (seconds == null) return '—';
@@ -43,7 +43,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function ExecutionHistory({ jobId }) {
+export default function ExecutionHistory({ jobId, onOpenLiveLog }) {
   const [executions, setExecutions] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -137,6 +137,22 @@ export default function ExecutionHistory({ jobId }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+                      {exec.status === 'running' && onOpenLiveLog && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onOpenLiveLog(exec.id); }}
+                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase transition-all duration-200"
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            color: '#ef4444',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                        >
+                          <Radio size={8} className="animate-pulse" />
+                          live
+                        </button>
+                      )}
                       {exec.exit_code != null && exec.exit_code !== 0 && (
                         <span className="text-xs font-mono" style={{ color: 'var(--txt-dim)' }}>
                           exit {exec.exit_code}

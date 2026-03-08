@@ -6,17 +6,22 @@ import EnvVarsEditor from '../components/EnvVarsEditor';
 import ExecutionHistory from '../components/ExecutionHistory';
 import CodeEditor from '../components/CodeEditor';
 import JobAnalytics from '../components/JobAnalytics';
-import { motion } from 'framer-motion';
+import VersionHistory from '../components/VersionHistory';
+import NextRuns from '../components/NextRuns';
+import LiveLog from '../components/LiveLog';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft, Loader2, Pencil, Trash2, Zap, CheckCircle2,
-  Code2, KeyRound, History, Play, Pause, AlertTriangle, BarChart3,
+  Code2, KeyRound, History, Play, Pause, BarChart3,
+  GitBranch, Copy, Radio,
 } from 'lucide-react';
 
 const TABS = [
   { id: 'script', label: 'Script', icon: Code2 },
   { id: 'env', label: 'Variables', icon: KeyRound },
   { id: 'history', label: 'History', icon: History },
+  { id: 'versions', label: 'Versions', icon: GitBranch },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
@@ -30,6 +35,8 @@ export default function JobDetail() {
   const [deleting, setDeleting] = useState(false);
   const [triggering, setTriggering] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [liveLogExecId, setLiveLogExecId] = useState(null);
 
   const fetchJob = useCallback(async () => {
     try {
@@ -82,6 +89,20 @@ export default function JobDetail() {
     }
   };
 
+  const handleDuplicate = async () => {
+    setDuplicating(true);
+    try {
+      const newJob = await jobs.duplicate(id);
+      toast.success(`Duplicated as "${newJob.name}"`);
+      navigate(`/jobs/${newJob.id}`);
+    } catch (err) {
+      toast.error('Failed to duplicate job');
+      console.error(err);
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -107,15 +128,15 @@ export default function JobDetail() {
       </button>
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold tracking-tight">{job.name}</h1>
-            <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold uppercase"
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{job.name}</h1>
+            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-mono font-semibold uppercase"
                   style={{ background: 'var(--surface-3)', color: 'var(--txt-muted)' }}>
               {job.script_type}
             </span>
-            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-semibold"
                   style={{
                     background: job.is_active ? 'var(--accent-glow)' : 'var(--surface-3)',
                     color: job.is_active ? 'var(--accent)' : 'var(--txt-dim)',
@@ -132,7 +153,7 @@ export default function JobDetail() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
           {/* Toggle active */}
           <button
             onClick={handleToggleActive}
@@ -159,6 +180,19 @@ export default function JobDetail() {
           >
             {triggering ? <CheckCircle2 size={14} /> : <Zap size={14} />}
             <span>Run now</span>
+          </button>
+
+          {/* Duplicate */}
+          <button
+            onClick={handleDuplicate}
+            disabled={duplicating}
+            className="p-2.5 rounded-xl transition-all duration-200"
+            style={{ color: 'var(--txt-muted)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.color = 'var(--txt)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+            title="Duplicate job"
+          >
+            {duplicating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
           </button>
 
           {/* Edit */}
@@ -217,12 +251,12 @@ export default function JobDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-8 border-b" style={{ borderColor: 'var(--border)' }}>
+      <div className="flex gap-1 mb-8 border-b overflow-x-auto" style={{ borderColor: 'var(--border)' }}>
         {TABS.map(({ id: tabId, label, icon: Icon }) => (
           <button
             key={tabId}
             onClick={() => setTab(tabId)}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all duration-300 -mb-px relative ${
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-all duration-300 -mb-px relative whitespace-nowrap ${
               tab === tabId ? 'tab-active' : ''
             }`}
             style={{
@@ -268,11 +302,34 @@ export default function JobDetail() {
               minHeight={200}
               maxHeight={600}
             />
+
+            {/* Next scheduled runs */}
+            {job.is_active && (
+              <NextRuns jobId={id} cronExpression={job.cron_expression} />
+            )}
           </div>
         )}
 
         {tab === 'env' && <EnvVarsEditor jobId={id} />}
-        {tab === 'history' && <ExecutionHistory jobId={id} />}
+        {tab === 'history' && (
+          <div className="space-y-4">
+            {/* Live Log Panel */}
+            <AnimatePresence>
+              {liveLogExecId && (
+                <LiveLog
+                  jobId={id}
+                  executionId={liveLogExecId}
+                  onClose={() => setLiveLogExecId(null)}
+                />
+              )}
+            </AnimatePresence>
+            <ExecutionHistory
+              jobId={id}
+              onOpenLiveLog={(execId) => setLiveLogExecId(execId)}
+            />
+          </div>
+        )}
+        {tab === 'versions' && <VersionHistory jobId={id} onRestored={fetchJob} />}
         {tab === 'analytics' && <JobAnalytics jobId={id} />}
       </motion.div>
 

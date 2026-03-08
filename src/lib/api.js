@@ -158,6 +158,26 @@ export const jobs = {
   getExecutions: (jobId, limit = 50, offset = 0) =>
     api(`/jobs/${jobId}/executions?limit=${limit}&offset=${offset}`),
 
+  // Script versions
+  getVersions: (jobId, limit = 50) =>
+    api(`/jobs/${jobId}/versions?limit=${limit}`),
+  getVersion: (jobId, version) =>
+    api(`/jobs/${jobId}/versions/${version}`),
+  restoreVersion: (jobId, version) =>
+    api(`/jobs/${jobId}/versions/${version}/restore`, { method: 'POST' }),
+
+  // Duplicate
+  duplicate: (jobId) =>
+    api(`/jobs/${jobId}/duplicate`, { method: 'POST' }),
+
+  // Next scheduled runs
+  getNextRuns: (jobId, count = 5) =>
+    api(`/jobs/${jobId}/next-runs?count=${count}`),
+
+  // Live log stream status
+  getStreamStatus: (jobId) =>
+    api(`/jobs/${jobId}/stream-status`),
+
   // Requirements (under /config, not /jobs)
   getRequirements: () => api('/config/requirements'),
   updateRequirements: (content) =>

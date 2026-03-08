@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import {
   Plus, Clock, ChevronRight,
   RefreshCw, Loader2, CheckCircle2, Zap,
-  BarChart3, ChevronDown, ChevronUp,
+  BarChart3, ChevronDown, ChevronUp, Copy,
 } from 'lucide-react';
 
 // Lazy-load cronstrue for human-readable cron descriptions
@@ -62,6 +62,18 @@ export default function Dashboard() {
     fetchJobs();
   };
 
+  const handleDuplicate = async (e, jobId) => {
+    e.stopPropagation();
+    try {
+      const newJob = await jobs.duplicate(jobId);
+      toast.success(`Duplicated as "${newJob.name}"`);
+      fetchJobs();
+    } catch (err) {
+      toast.error('Failed to duplicate job');
+      console.error(err);
+    }
+  };
+
   // Compute stats
   const activeCount = jobList.filter(j => j.is_active).length;
   const pausedCount = jobList.filter(j => !j.is_active).length;
@@ -81,9 +93,9 @@ export default function Dashboard() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             <span className="gradient-text">Dashboard</span>
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--txt-muted)' }}>
@@ -253,6 +265,22 @@ export default function Dashboard() {
                 ) : (
                   <Zap size={16} />
                 )}
+              </button>
+              <button
+                onClick={(e) => handleDuplicate(e, job.id)}
+                className="p-2.5 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+                style={{ color: 'var(--txt-muted)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--accent)';
+                  e.currentTarget.style.background = 'var(--accent-glow)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--txt-muted)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
+                title="Duplicate job"
+              >
+                <Copy size={14} />
               </button>
               <ChevronRight
                 size={16}
